@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mekteb-i İrfan | Ezber Çetelesi & Talebe Yönetimi</title>
+  
+  <!-- Meta & Favicon -->
+  <meta name="description" content="Mekteb-i İrfan Ezber Çetelesi, Ders Programı, Yoklama ve Günlük Vird Yönetim Sistemi">
+  <meta name="theme-color" content="#0D1B2A">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              DEFAULT: '#0D1B2A',
+              dark: '#070D15',
+              light: '#1E293B'
+            },
+            gold: {
+              DEFAULT: '#D4AF37',
+              light: '#FCD34D',
+              dark: '#B45309'
+            },
+            emerald: {
+              DEFAULT: '#10B981',
+              dark: '#059669'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons & Canvas Confetti -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Özel Selçuklu & Tezhip Tasarım CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-50 dark:bg-[#090E17] text-slate-900 dark:text-slate-100 flex flex-col min-h-screen selection:bg-amber-500 selection:text-white">
+
+  <!-- =========================================================================
+       1. ÜST GEZİNME VE BAŞLIK ÇUBUĞU (DESKTOP & MOBİL HEADER)
+       ========================================================================= -->
+  <header class="sticky top-0 z-40 bg-[#0D1B2A] text-white border-b border-amber-500/30 shadow-md no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Marka -->
+        <div onclick="navigateTo('MAIN_MENU')" class="flex items-center gap-3 cursor-pointer select-none">
+          <div class="seljuk-star gold w-10 h-10 text-lg shadow-lg flex-shrink-0">
+            <i class="fas fa-star text-slate-950"></i>
+          </div>
+          <div>
+            <span class="text-[10px] font-black text-amber-400 tracking-widest uppercase block leading-none">MEKTEB-İ İRFAN</span>
+            <span class="text-base font-black text-white tracking-tight">Ezber Çetelesi</span>
+          </div>
+        </div>
+
+        <!-- Masaüstü Gezinme Menüsü -->
+        <nav class="hidden md:flex items-center gap-1.5">
+          <button onclick="navigateTo('MAIN_MENU')" data-nav-target="MAIN_MENU" class="nav-tab">
+            <i class="fas fa-home text-xs"></i>
+            <span>Ana Sayfa</span>
+          </button>
+          <button onclick="navigateTo('SCHEDULE')" data-nav-target="SCHEDULE" class="nav-tab">
+            <i class="fas fa-calendar-check text-xs"></i>
+            <span>Yoklama</span>
+          </button>
+          <button onclick="navigateTo('DUTIES')" data-nav-target="DUTIES" class="nav-tab">
+            <i class="fas fa-clipboard-check text-xs"></i>
+            <span>Görevler</span>
+          </button>
+          <button onclick="navigateTo('MEMORIZATION')" data-nav-target="MEMORIZATION" class="nav-tab">
+            <i class="fas fa-book-quran text-xs"></i>
+            <span>Ezber</span>
+          </button>
+          <button onclick="navigateTo('STUDENTS')" data-nav-target="STUDENTS" class="nav-tab">
+            <i class="fas fa-users text-xs"></i>
+            <span>Talebeler</span>
+          </button>
+          <button onclick="navigateTo('REPORTS')" data-nav-target="REPORTS" class="nav-tab">
+            <i class="fas fa-file-invoice text-xs"></i>
+            <span>Karneler</span>
+          </button>
+        </nav>
+
+        <!-- Sağ Aksiyonlar (Tema, Ayarlar, Talebe Portalı) -->
+        <div class="flex items-center gap-2">
+          <!-- Karanlık Mod Geçişi -->
+          <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title="Temayı Değiştir">
+            <i id="theme-toggle-icon" class="fas fa-moon text-amber-300 text-sm"></i>
+          </button>
+
+          <!-- Ayarlar Butonu -->
+          <button onclick="navigateTo('SETTINGS')" data-nav-target="SETTINGS" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title="Ayarlar">
+            <i class="fas fa-cog text-slate-300 text-sm"></i>
+          </button>
+
+          <!-- Talebe Portalına Geç Butonu -->
+          <button onclick="navigateTo('STUDENT_PORTAL')" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition">
+            <i class="fas fa-graduation-cap text-amber-300"></i>
+            <span>Talebe Portalı</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       2. ANA UYGULAMA İÇERİK ALANI (DYNAMIC SPA CONTAINER)
+       ========================================================================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div id="app-content">
+      <!-- JavaScript tarafından dinamik olarak render edilecektir -->
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       3. MOBİL ALT GEZİNME ÇUBUĞU (BOTTOM NAVIGATION BAR)
+       ========================================================================= -->
+  <div id="mobile-bottom-nav" class="bottom-nav md:hidden no-print">
+    <button onclick="navigateTo('MAIN_MENU')" data-nav-target="MAIN_MENU" class="bottom-nav-btn active">
+      <i class="fas fa-home"></i>
+      <span>Ana Sayfa</span>
+    </button>
+    <button onclick="navigateTo('SCHEDULE')" data-nav-target="SCHEDULE" class="bottom-nav-btn">
+      <i class="fas fa-calendar-check"></i>
+      <span>Yoklama</span>
+    </button>
+    <button onclick="navigateTo('DUTIES')" data-nav-target="DUTIES" class="bottom-nav-btn">
+      <i class="fas fa-clipboard-check"></i>
+      <span>Görevler</span>
+    </button>
+    <button onclick="navigateTo('MEMORIZATION')" data-nav-target="MEMORIZATION" class="bottom-nav-btn">
+      <i class="fas fa-book-quran"></i>
+      <span>Ezber</span>
+    </button>
+    <button onclick="navigateTo('STUDENTS')" data-nav-target="STUDENTS" class="bottom-nav-btn">
+      <i class="fas fa-users"></i>
+      <span>Talebeler</span>
+    </button>
+    <button onclick="navigateTo('REPORTS')" data-nav-target="REPORTS" class="bottom-nav-btn">
+      <i class="fas fa-file-invoice"></i>
+      <span>Karneler</span>
+    </button>
+  </div>
+
+  <!-- =========================================================================
+       4. GENEL MODAL / DİYALOG PENCERESİ (OVERLAY DIALOG)
+       ========================================================================= -->
+  <div id="generic-modal" class="modal-backdrop hidden no-print">
+    <div id="generic-modal-body" class="modal-content">
+      <!-- Dinamik Modal İçeriği -->
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       5. BİLDİRİM KAPSAYICISI (TOAST NOTIFICATIONS)
+       ========================================================================= -->
+  <div id="toast-container" class="fixed bottom-16 sm:bottom-6 right-4 z-50 flex flex-col gap-2 pointer-events-none no-print"></div>
+
+  <!-- =========================================================================
+       6. JAVASCRIPT MODÜLLERİ
+       ========================================================================= -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "1038492049182",
+    "project_id": "mekteb-i-irfan-cloud",
+    "storage_bucket": "mekteb-i-irfan-cloud.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1038492049182:android:938e3a2b1c4d5e6f7a8b9c",
+        "android_client_info": {
+          "package_name": "com.aistudio.mektebiirfan.dbrrve"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1038492049182-clientid.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.mektebiirfan.dbrrve",
+            "certificate_hash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0"
+          }
+        },
+        {
+          "client_id": "1038492049182-webclientid.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDummyKeyForMektebIrfanApp123456"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

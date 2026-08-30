@@ -1,0 +1,396 @@
+/* ==========================================================================
+   MEKTEB-İ İRFAN EZBER ÇETELESİ - SELÇUKLU & TEZHİP TASARIM SİSTEMİ
+   Altın Varak Yaldızlar, Gece Laciverti, Selçuklu 8 Köşeli Yıldızları
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  /* Renk Paleti (Selçuklu & Tezhip) */
+  --color-navy: #0D1B2A;
+  --color-navy-dark: #070D15;
+  --color-navy-light: #1E293B;
+  
+  --color-gold: #D4AF37;
+  --color-gold-light: #FCD34D;
+  --color-gold-dark: #B45309;
+  --color-gold-subtle: rgba(212, 175, 55, 0.2);
+
+  --color-emerald: #10B981;
+  --color-emerald-dark: #059669;
+  --color-emerald-light: #34D399;
+
+  --color-purple: #8B5CF6;
+  --color-purple-dark: #6D28D9;
+
+  --color-teal: #06B6D4;
+  --color-teal-dark: #0891B2;
+
+  --color-orange: #F59E0B;
+  --color-red: #EF4444;
+
+  /* Zemin & Yüzey (Açık Mod) */
+  --bg-canvas: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-variant: #F1F5F9;
+  --border-light: #E2E8F0;
+  --border-stroke: #CBD5E1;
+
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+
+  --shadow-card: 0 4px 20px -2px rgba(13, 27, 42, 0.06), 0 2px 6px -1px rgba(13, 27, 42, 0.04);
+  --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.18);
+  --radius-card: 18px;
+}
+
+[data-theme="dark"] {
+  --bg-canvas: #090E17;
+  --bg-surface: #111A28;
+  --bg-surface-variant: #1A2638;
+  --border-light: #24344D;
+  --border-stroke: #2D4160;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Genel Tipografi & Temel Stiller */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.font-arabic {
+  font-family: 'Amiri', serif;
+}
+
+/* Selçuklu Altın Yaldız Kenarlık Efekti */
+.tezhip-border {
+  border: 1.5px solid transparent;
+  background-clip: padding-box, border-box;
+  background-origin: padding-box, border-box;
+  background-image: linear-gradient(to right, var(--bg-surface), var(--bg-surface)),
+                    linear-gradient(135deg, #D4AF37 0%, rgba(212,175,55,0.3) 50%, #F59E0B 100%);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #F59E0B 0%, #D4AF37 50%, #FCD34D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-badge {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(245, 158, 11, 0.1));
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #B45309;
+}
+
+[data-theme="dark"] .gold-badge {
+  color: #FCD34D;
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+/* 8 Köşeli Selçuklu Yıldızı Süslemesi (CSS Polygon) */
+.seljuk-star {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-navy);
+  color: var(--color-gold-light);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(13, 27, 42, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.seljuk-star:hover {
+  transform: scale(1.05);
+}
+
+.seljuk-star.gold {
+  background: linear-gradient(135deg, #D4AF37, #B45309);
+  color: var(--color-navy);
+}
+
+.seljuk-star.emerald {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: #FFFFFF;
+}
+
+.seljuk-star.purple {
+  background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+  color: #FFFFFF;
+}
+
+/* Kart & Yüzeyler */
+.tezhip-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tezhip-card:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: var(--shadow-gold);
+}
+
+.tezhip-card-interactive {
+  cursor: pointer;
+}
+
+.tezhip-card-interactive:active {
+  transform: scale(0.985);
+}
+
+/* Üst Köşe Tezhip Desenleri */
+.ornament-corner-tr {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  background: radial-gradient(circle at top right, rgba(212,175,55,0.2) 0%, transparent 70%);
+  border-top-right-radius: var(--radius-card);
+  pointer-events: none;
+}
+
+.ornament-corner-bl {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 38px;
+  height: 38px;
+  background: radial-gradient(circle at bottom left, rgba(212,175,55,0.15) 0%, transparent 70%);
+  border-bottom-left-radius: var(--radius-card);
+  pointer-events: none;
+}
+
+/* Hap (Pill) Butonları & Vird Seçiciler */
+.prayer-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid var(--border-light);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.prayer-pill.checked {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: #FFFFFF;
+  border-color: #D4AF37;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+/* Sayaç Stepper Kontrolleri */
+.stepper-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--bg-surface-variant);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stepper-btn:hover {
+  background: var(--color-navy);
+  color: #FFFFFF;
+}
+
+.stepper-btn:active {
+  transform: scale(0.9);
+}
+
+/* Durum Rozetleri */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge-geldi { background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-izinli { background: rgba(245, 158, 11, 0.12); color: #D97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-gec { background: rgba(6, 182, 212, 0.12); color: #0891B2; border: 1px solid rgba(6, 182, 212, 0.3); }
+.badge-gelmedi { background: rgba(239, 68, 68, 0.12); color: #DC2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* Yıldız Puanlama */
+.star-rating {
+  color: #CBD5E1;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.star-rating.active {
+  color: #F59E0B;
+}
+
+/* Gezinme ve Sekmeler */
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-tab:hover {
+  background: var(--bg-surface-variant);
+  color: var(--text-primary);
+}
+
+.nav-tab.active {
+  background: var(--color-navy);
+  color: var(--color-gold-light);
+  box-shadow: 0 4px 12px rgba(13, 27, 42, 0.2);
+}
+
+[data-theme="dark"] .nav-tab.active {
+  background: linear-gradient(135deg, #1E293B, #0D1B2A);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+/* Mobil Alt Gezinme Çubuğu */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border-top: 1.5px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index: 100;
+}
+
+.bottom-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.bottom-nav-btn.active {
+  color: var(--color-navy);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] .bottom-nav-btn.active {
+  color: var(--color-gold-light);
+}
+
+.bottom-nav-btn i {
+  font-size: 1.2rem;
+}
+
+/* Modal ve Diyaloglar */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(13, 27, 42, 0.65);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  border-radius: 22px;
+  border: 1.5px solid var(--border-light);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  max-width: 580px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Yazdırma (Print) Stilleri - Resmi Karne */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  .no-print, .bottom-nav, header, aside, .modal-backdrop {
+    display: none !important;
+  }
+  .print-area {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .tezhip-card {
+    box-shadow: none !important;
+    border: 1px solid #999 !important;
+    page-break-inside: avoid;
+  }
+}
