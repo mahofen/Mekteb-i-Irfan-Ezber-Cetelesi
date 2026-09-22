@@ -1062,7 +1062,15 @@ function renderStudentsScreen(students, memorization, attendance, duties) {
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${students.map(st => {
+        ${students.length === 0 ? `
+          <div class="col-span-full tezhip-card p-12 text-center space-y-3">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center text-xl shadow-inner">
+              <i class="fas fa-user-slash"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Kayıtlı Talebe Bulunmuyor</h3>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">Sistemde şu an kayıtlı talebe yok. 'Yeni Talebe Ekle' butonuyla hemen talebe kaydı açabilirsiniz.</p>
+          </div>
+        ` : students.map(st => {
           const stMem = memorization.filter(m => m.studentId === st.id);
           const completedCount = stMem.filter(m => m.status === "TAMAMLANDI").length;
           const activeCount = stMem.filter(m => m.status === "DEVAM_EDIYOR").length;
@@ -1146,6 +1154,41 @@ function renderStudentsScreen(students, memorization, attendance, duties) {
 // 6. RESMİ KARNELER & RAPORLAR EKRANI
 // =========================================================================
 function renderReportsScreen(students, memorization, attendance, duties) {
+  if (!students || students.length === 0) {
+    return `
+      <div class="space-y-6 pb-20 max-w-5xl mx-auto">
+        <div class="tezhip-card p-4 flex items-center gap-3 no-print">
+          <button onclick="navigateTo('MAIN_MENU')" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-amber-500 hover:text-white transition">
+            <i class="fas fa-arrow-left text-sm"></i>
+          </button>
+          <div>
+            <h1 class="text-xl font-black text-slate-900 dark:text-white">Talebe Gelişim Karnesi</h1>
+            <p class="text-xs text-slate-500">Resmi karne ve gelişim çıktısı</p>
+          </div>
+        </div>
+        <div class="tezhip-card p-12 text-center space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center text-2xl shadow-inner">
+            <i class="fas fa-user-slash"></i>
+          </div>
+          <h3 class="text-lg font-black text-slate-800 dark:text-slate-100">Kayıtlı Talebe Bulunamadı</h3>
+          <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            Karne ve gelişim raporu görüntüleyebilmek için sisteme kayıtlı en az bir talebe bulunması gerekmektedir. Yeni bir talebe ekleyebilir veya Ayarlar ekranından örnek verileri yükleyebilirsiniz.
+          </p>
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button onclick="openNewStudentModal()" class="px-4 py-2.5 bg-blue-900 text-amber-300 font-bold text-xs rounded-xl shadow hover:bg-blue-800 transition flex items-center gap-1.5">
+              <i class="fas fa-user-plus"></i>
+              <span>Yeni Talebe Ekle</span>
+            </button>
+            <button onclick="navigateTo('SETTINGS')" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition flex items-center gap-1.5">
+              <i class="fas fa-gear text-amber-600"></i>
+              <span>Ayarlar Ekranına Git</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   const selectedStudentId = AppState.modalData?.reportStudentId || students[0]?.id;
   const student = students.find(s => s.id === selectedStudentId) || students[0];
 
@@ -1246,6 +1289,10 @@ function renderReportsScreen(students, memorization, attendance, duties) {
 // =========================================================================
 function renderSettingsScreen() {
   const currentSchoolCode = StorageManager.getSchoolCode();
+  const students = StorageManager.getStudents();
+  const memorization = StorageManager.getMemorization();
+  const attendance = StorageManager.getAttendance();
+  const duties = StorageManager.getDuties();
 
   return `
     <div class="space-y-6 pb-20 max-w-4xl mx-auto">
@@ -1255,11 +1302,11 @@ function renderSettingsScreen() {
         </button>
         <div>
           <h1 class="text-xl font-black text-slate-900 dark:text-white">Ayarlar ve Veri Yönetimi</h1>
-          <p class="text-xs text-slate-500">Kurum kodu, talebe erişim ayarları & veri yedekleme</p>
+          <p class="text-xs text-slate-500">Kurum kodu, talebe erişim ayarları, veri yedekleme & veritabanı sıfırlama</p>
         </div>
       </div>
 
-      <!-- Kurum ve Genel Giriş Kodu Yönetimi -->
+      <!-- 1. Kurum ve Genel Giriş Kodu Yönetimi -->
       <div class="tezhip-card p-6 space-y-4">
         <div class="flex items-center gap-3">
           <div class="seljuk-star gold w-10 h-10 text-lg"><i class="fas fa-key"></i></div>
@@ -1290,10 +1337,15 @@ function renderSettingsScreen() {
         </p>
       </div>
 
-      <!-- Veri Yedekleme & Geri Yükleme -->
+      <!-- 2. Veri Yedekleme & Geri Yükleme -->
       <div class="tezhip-card p-6 space-y-5">
-        <h3 class="text-base font-bold text-slate-900 dark:text-white">Veri Yedekleme & Geri Yükleme</h3>
-        <p class="text-xs text-slate-500">Tüm talebe, ezber, ders programı ve yoklama verilerinizi JSON dosyası olarak bilgisayarınıza indirebilir veya yükleyebilirsiniz.</p>
+        <div class="flex items-center gap-3">
+          <div class="seljuk-star purple w-10 h-10 text-lg"><i class="fas fa-hard-drive"></i></div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Veri Yedekleme & Geri Yükleme</h3>
+            <p class="text-xs text-slate-500">Tüm talebe, ezber, ders programı ve yoklama verilerinizi JSON dosyası olarak bilgisayarınıza indirebilir veya yükleyebilirsiniz.</p>
+          </div>
+        </div>
         
         <div class="flex items-center gap-3 flex-wrap">
           <button onclick="exportDataJSON()" class="px-4 py-2.5 bg-[#0D1B2A] text-amber-300 font-bold text-xs rounded-xl shadow hover:bg-slate-800 flex items-center gap-2">
@@ -1306,6 +1358,64 @@ function renderSettingsScreen() {
             <span>Yedeği Geri Yükle</span>
             <input type="file" accept=".json" onchange="importDataJSON(event)" class="hidden">
           </label>
+        </div>
+      </div>
+
+      <!-- 3. Tehlikeli Bölge: Tüm Kayıtları Silme & Sıfırlama (Şifre Korumalı) -->
+      <div class="tezhip-card p-6 space-y-5 border-2 border-rose-500/40 bg-gradient-to-br from-rose-50/20 to-rose-100/10 dark:from-rose-950/20 dark:to-slate-900">
+        <div class="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-rose-200 dark:border-rose-900/40">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-rose-600/15 border border-rose-500/40 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg shadow-inner">
+              <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-rose-700 dark:text-rose-400">Veritabanı Sıfırlama & Kayıt Silme (Tehlikeli Bölge)</h3>
+              <p class="text-xs text-slate-500">Sistemdeki mevcut tüm verileri yönetici şifre onayıyla kalıcı olarak temizleyin.</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300 border border-rose-400/30">
+            <i class="fas fa-lock text-[10px] mr-1"></i> Şifre Korumalı
+          </span>
+        </div>
+
+        <!-- Mevcut Sistem İstatistikleri -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="p-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center shadow-sm">
+            <div class="text-[10.5px] uppercase font-bold text-slate-400">Kayıtlı Talebe</div>
+            <div class="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5">${students.length}</div>
+          </div>
+          <div class="p-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center shadow-sm">
+            <div class="text-[10.5px] uppercase font-bold text-slate-400">Ezber Kaydı</div>
+            <div class="text-lg font-black text-purple-600 dark:text-purple-400 mt-0.5">${memorization.length}</div>
+          </div>
+          <div class="p-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center shadow-sm">
+            <div class="text-[10.5px] uppercase font-bold text-slate-400">Yoklama Kaydı</div>
+            <div class="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">${attendance.length}</div>
+          </div>
+          <div class="p-3 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center shadow-sm">
+            <div class="text-[10.5px] uppercase font-bold text-slate-400">Günlük Vazife</div>
+            <div class="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">${duties.length}</div>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+          <i class="fas fa-shield-halved text-amber-600 text-base mt-0.5 flex-shrink-0"></i>
+          <p class="leading-relaxed">
+            Yanlışlıkla veya yetkisiz olarak verilerin silinmesini önlemek amacıyla, silme işlemi onay penceresinde <strong>Yönetici / Hoca Şifrenizin</strong> girilmesini gerektirir. Şifre doğrulanmadan hiçbir veri silinmez.
+          </p>
+        </div>
+
+        <!-- Aksiyon Butonları -->
+        <div class="flex items-center gap-3 flex-wrap pt-1">
+          <button onclick="openDeleteAllDataModal()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-lg transition flex items-center gap-2">
+            <i class="fas fa-trash-can"></i>
+            <span>Tüm Kayıtları Sil (Şifre Onaylı)</span>
+          </button>
+
+          <button onclick="openRestoreDefaultsModal()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/40 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5" title="Sıfırlama sonrası örnek öğrenci ve ezberleri yeniden yükleyin">
+            <i class="fas fa-rotate-left text-amber-600"></i>
+            <span>Örnek Verileri Yeniden Yükle</span>
+          </button>
         </div>
       </div>
     </div>
@@ -2402,6 +2512,207 @@ function importDataJSON(event) {
     }
   };
   reader.readAsText(file);
+}
+
+// =========================================================================
+// VERİTABANI SIFIRLAMA & ŞİFRELİ SİLME MODALLARI
+// =========================================================================
+function openDeleteAllDataModal() {
+  const modal = document.getElementById("generic-modal");
+  const modalContent = document.getElementById("generic-modal-body");
+  if (!modal || !modalContent) return;
+
+  const students = StorageManager.getStudents();
+  const memorization = StorageManager.getMemorization();
+  const attendance = StorageManager.getAttendance();
+  const duties = StorageManager.getDuties();
+
+  modalContent.innerHTML = `
+    <div class="p-6 sm:p-7 space-y-5">
+      <!-- Başlık -->
+      <div class="flex items-center gap-3.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div class="w-12 h-12 rounded-2xl bg-rose-600/20 border border-rose-500/40 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+          <i class="fas fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-black text-slate-900 dark:text-white">Tüm Kayıtları Silme Onayı</h3>
+          <p class="text-xs text-rose-500 font-bold">⚠️ DİKKAT: Bu işlem kesinlikle geri alınamaz!</p>
+        </div>
+      </div>
+
+      <!-- Bilgilendirme ve Silinecek Özet -->
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+          Aşağıda listelenen tüm medrese kayıtları sistemden kalıcı olarak silinecektir:
+        </p>
+        
+        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-slate-700 dark:text-slate-300">
+            <span class="flex items-center gap-2"><i class="fas fa-user-xmark text-rose-500"></i> Talebe Hesapları & Kodları:</span>
+            <strong class="font-mono text-rose-600 font-bold">${students.length} Kayıt</strong>
+          </div>
+          <div class="flex items-center justify-between text-slate-700 dark:text-slate-300">
+            <span class="flex items-center gap-2"><i class="fas fa-book-quran text-purple-500"></i> Ezber Çeteleleri & Puanlar:</span>
+            <strong class="font-mono text-purple-600 font-bold">${memorization.length} Kayıt</strong>
+          </div>
+          <div class="flex items-center justify-between text-slate-700 dark:text-slate-300">
+            <span class="flex items-center gap-2"><i class="fas fa-clipboard-user text-emerald-500"></i> Günlük Yoklama Kayıtları:</span>
+            <strong class="font-mono text-emerald-600 font-bold">${attendance.length} Kayıt</strong>
+          </div>
+          <div class="flex items-center justify-between text-slate-700 dark:text-slate-300">
+            <span class="flex items-center gap-2"><i class="fas fa-hands-praying text-amber-500"></i> Günlük Vazife (Namaz & Virdler):</span>
+            <strong class="font-mono text-amber-600 font-bold">${duties.length} Kayıt</strong>
+          </div>
+        </div>
+
+        <!-- Ek Opsiyon: Ders Programı -->
+        <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <input type="checkbox" id="delete-modal-clear-schedule" class="w-4 h-4 rounded text-rose-600 accent-rose-600">
+          <span class="text-xs text-slate-700 dark:text-slate-300 font-semibold">Haftalık ders programını da sil (Tüm dersler kaldırılsın)</span>
+        </label>
+      </div>
+
+      <!-- Hata Uyarısı Kutusu -->
+      <div id="delete-modal-error" class="hidden p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+        <i class="fas fa-circle-exclamation text-sm text-rose-500"></i>
+        <span id="delete-modal-error-text">Hatalı şifre!</span>
+      </div>
+
+      <!-- Şifre Onay Alanı -->
+      <div class="space-y-2 pt-1">
+        <label class="block text-xs font-black text-slate-800 dark:text-slate-200">
+          Silme İşlemini Onaylamak İçin Yönetici Şifrenizi Yazınız:
+        </label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i class="fas fa-lock text-xs"></i>
+          </span>
+          <input id="delete-modal-password" type="password" placeholder="Yönetici şifreniz (Varsayılan: 1234)"
+            onkeydown="if(event.key==='Enter') handleConfirmDeleteAllData()"
+            class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:ring-2 focus:ring-rose-500 outline-none transition">
+          <button type="button" onclick="togglePasswordVisibility('delete-modal-password', 'delete-modal-eye')"
+            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+            <i id="delete-modal-eye" class="fas fa-eye text-xs"></i>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-400">
+          Güvenlik kuralı gereğince hoca / yönetici şifresi doğrulanmadan silme işlemi gerçekleştirilemez.
+        </p>
+      </div>
+
+      <!-- Butonlar -->
+      <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="closeModal()" class="px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+          Vazgeç
+        </button>
+        <button type="button" onclick="handleConfirmDeleteAllData()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-lg transition flex items-center gap-2">
+          <i class="fas fa-trash-can"></i>
+          <span>Evet, Tüm Kayıtları Kalıcı Olarak Sil</span>
+        </button>
+      </div>
+    </div>
+  `;
+  modal.classList.remove("hidden");
+
+  setTimeout(() => {
+    document.getElementById("delete-modal-password")?.focus();
+  }, 100);
+}
+
+function handleConfirmDeleteAllData() {
+  const passwordInput = document.getElementById("delete-modal-password")?.value;
+  const clearScheduleCheckbox = document.getElementById("delete-modal-clear-schedule");
+  const isScheduleChecked = clearScheduleCheckbox ? clearScheduleCheckbox.checked : false;
+  
+  const errorBox = document.getElementById("delete-modal-error");
+  const errorText = document.getElementById("delete-modal-error-text");
+  const passField = document.getElementById("delete-modal-password");
+
+  if (errorBox) errorBox.classList.add("hidden");
+
+  if (!passwordInput || !passwordInput.trim()) {
+    if (errorBox && errorText) {
+      errorText.textContent = "Lütfen silme işlemini onaylamak için yönetici şifrenizi giriniz.";
+      errorBox.classList.remove("hidden");
+    }
+    if (passField) {
+      passField.classList.add("border-rose-500");
+      passField.focus();
+    }
+    return;
+  }
+
+  // Şifre kontrolü
+  const isPasswordValid = StorageManager.verifyAdminPassword(passwordInput);
+
+  if (!isPasswordValid) {
+    if (errorBox && errorText) {
+      errorText.textContent = "Hatalı yönetici şifresi! Güvenlik nedeniyle silme işlemi iptal edildi.";
+      errorBox.classList.remove("hidden");
+    }
+    if (passField) {
+      passField.classList.add("border-rose-500");
+      passField.focus();
+    }
+    showToast("Hatalı yönetici şifresi! Kayıtlar silinmedi.", "error");
+    return;
+  }
+
+  // Şifre doğru -> Verileri sil
+  StorageManager.clearAllRecords({
+    clearStudents: true,
+    clearMemorization: true,
+    clearAttendance: true,
+    clearDuties: true,
+    clearSchedule: isScheduleChecked
+  });
+
+  closeModal();
+  showToast("Mevcut tüm kayıtlar başarıyla silindi! Veritabanı temizlendi. 🗑️", "success");
+  renderApp();
+}
+
+function openRestoreDefaultsModal() {
+  const modal = document.getElementById("generic-modal");
+  const modalContent = document.getElementById("generic-modal-body");
+  if (!modal || !modalContent) return;
+
+  modalContent.innerHTML = `
+    <div class="p-6 sm:p-7 space-y-5">
+      <div class="flex items-center gap-3.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fas fa-rotate-left"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-black text-slate-900 dark:text-white">Örnek Verileri Yeniden Yükle</h3>
+          <p class="text-xs text-slate-500">Fabrika başlangıç verileri ve talebeler sisteme yüklenecektir.</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        Sisteme orijinal örnek talebeler (Ahmet, Mehmet Akif, Ömer Faruk vb.), ders programı ve örnek ezber çetelesi yüklenecektir. Devam etmek istiyor musunuz?
+      </p>
+
+      <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" onclick="closeModal()" class="px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+          Vazgeç
+        </button>
+        <button type="button" onclick="handleConfirmRestoreDefaults()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow transition flex items-center gap-2">
+          <i class="fas fa-check"></i>
+          <span>Örnek Verileri Yükle</span>
+        </button>
+      </div>
+    </div>
+  `;
+  modal.classList.remove("hidden");
+}
+
+function handleConfirmRestoreDefaults() {
+  StorageManager.restoreDefaultData();
+  closeModal();
+  showToast("Örnek fabrika verileri ve talebeler başarıyla yüklendi! 🌟", "success");
+  triggerConfetti();
+  renderApp();
 }
 
 function setupGlobalListeners() {

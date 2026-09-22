@@ -512,5 +512,73 @@ const StorageManager = {
     } catch (e) {
       return { success: false, error: e.message };
     }
+  },
+
+  // Yönetici Yetki / Şifre Doğrulama (Admin Password Verification for Sensitive Actions)
+  verifyAdminPassword(passwordInput) {
+    const cleanPass = (passwordInput || "").trim();
+    if (!cleanPass) return false;
+
+    // 1. Standart / Master Şifre
+    if (cleanPass === "1234") return true;
+
+    // 2. Aktif oturum açmış hocanın veya kayıtlı hocaların şifresi
+    const currentSession = this.getTeacherSession();
+    const presetTeachers = [
+      { username: "admin", pin: "1234" },
+      { username: "hoca", pin: "1234" },
+      { username: "hafiz", pin: "1234" },
+      { username: "mudur", pin: "1234" }
+    ];
+    let customTeachers = [];
+    try {
+      const data = localStorage.getItem("mekteb_custom_teachers_v1");
+      if (data) customTeachers = JSON.parse(data);
+    } catch (e) {}
+
+    const allTeachers = [...presetTeachers, ...customTeachers];
+
+    if (currentSession && currentSession.username) {
+      const activeTeacher = allTeachers.find(t => t.username.toLowerCase() === currentSession.username.toLowerCase());
+      if (activeTeacher && (activeTeacher.pin === cleanPass || cleanPass === "1234")) {
+        return true;
+      }
+    }
+
+    return allTeachers.some(t => t.pin === cleanPass);
+  },
+
+  // Tüm Kayıtları Silme / Sıfırlama (Wipe All Records)
+  clearAllRecords(options = {}) {
+    const opts = {
+      clearStudents: true,
+      clearMemorization: true,
+      clearAttendance: true,
+      clearDuties: true,
+      clearSchedule: false,
+      ...options
+    };
+
+    if (opts.clearStudents) this.saveStudents([]);
+    if (opts.clearMemorization) this.saveMemorization([]);
+    if (opts.clearAttendance) this.saveAttendance([]);
+    if (opts.clearDuties) this.saveDuties([]);
+    if (opts.clearSchedule) this.saveSchedule([]);
+    
+    // Aktif talebe oturumunu da güvenle sonlandır
+    this.clearStudentSession();
+    return { success: true };
+  },
+
+  // Varsayılan Örnek Verilere Sıfırla (Restore Default Sample Data)
+  restoreDefaultData() {
+    this.saveStudents(DEFAULT_STUDENTS);
+    this.saveSchedule(DEFAULT_SCHEDULE);
+    this.saveMemorization(DEFAULT_MEMORIZATION_RECORDS);
+    this.saveAttendance(this.generateInitialAttendance());
+    this.saveDuties(this.generateInitialDuties());
+    this.clearStudentSession();
+    return { success: true };
   }
 };
+
