@@ -92,7 +92,7 @@
           </button>
         </nav>
 
-        <!-- Sağ Aksiyonlar (Tema, Ayarlar, Talebe Portalı) -->
+        <!-- Sağ Aksiyonlar (Tema, Ayarlar, Talebe Portalı, Yönetici Oturumu) -->
         <div class="flex items-center gap-2">
           <!-- Karanlık Mod Geçişi -->
           <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title="Temayı Değiştir">
@@ -100,7 +100,7 @@
           </button>
 
           <!-- Ayarlar Butonu -->
-          <button onclick="navigateTo('SETTINGS')" data-nav-target="SETTINGS" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title="Ayarlar">
+          <button id="header-settings-btn" onclick="navigateTo('SETTINGS')" data-nav-target="SETTINGS" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title="Ayarlar">
             <i class="fas fa-cog text-slate-300 text-sm"></i>
           </button>
 
@@ -109,6 +109,13 @@
             <i class="fas fa-graduation-cap text-amber-300"></i>
             <span>Talebe Portalı</span>
           </button>
+
+          <!-- Yönetici Oturum / Çıkış Butonu -->
+          <div id="teacher-session-badge" class="flex items-center">
+            <button onclick="logoutTeacher()" class="w-9 h-9 rounded-xl bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/30 flex items-center justify-center transition" title="Yönetici Oturumunu Kapat">
+              <i class="fas fa-right-from-bracket text-xs"></i>
+            </button>
+          </div>
         </div>
 
       </div>

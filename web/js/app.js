@@ -37,10 +37,29 @@ function getTodayDayOfWeek() {
 // Uygulama Başlatma
 document.addEventListener("DOMContentLoaded", () => {
   StorageManager.init();
+
+  // Yönetici Oturumu Kontrolü
+  const savedTeacherSession = StorageManager.getTeacherSession();
+  if (savedTeacherSession && savedTeacherSession.isLoggedIn) {
+    AppState.userSession = savedTeacherSession;
+  } else {
+    AppState.userSession = {
+      isLoggedIn: false,
+      username: "",
+      displayName: "",
+      role: ""
+    };
+    if (AppState.currentScreen !== "STUDENT_PORTAL") {
+      AppState.currentScreen = "LOGIN";
+    }
+  }
+
+  // Talebe Oturumu Kontrolü
   const savedStudentSession = StorageManager.getStudentSession();
   if (savedStudentSession && savedStudentSession.student) {
     AppState.studentSession = savedStudentSession;
   }
+
   applyTheme(AppState.theme);
   setupGlobalListeners();
   navigateTo(AppState.currentScreen);
@@ -115,6 +134,14 @@ function renderApp() {
   const contentArea = document.getElementById("app-content");
   if (!contentArea) return;
 
+  // Eğer yönetici giriş yapmamışsa ve talep edilen ekran talebe portalı değilse, Yönetici Giriş Ekranını göster
+  if ((!AppState.userSession || !AppState.userSession.isLoggedIn) && AppState.currentScreen !== "STUDENT_PORTAL") {
+    contentArea.innerHTML = renderTeacherLoginScreen();
+    updateNavHighlights();
+    attachDynamicEventListeners();
+    return;
+  }
+
   const students = StorageManager.getStudents();
   const schedule = StorageManager.getSchedule();
   const memorization = StorageManager.getMemorization();
@@ -168,14 +195,232 @@ function updateNavHighlights() {
     }
   });
 
-  // Hoca veya Talebe modunda bar durumları
-  const teacherHeader = document.getElementById("teacher-header");
-  const bottomNav = document.getElementById("mobile-bottom-nav");
-  if (AppState.currentScreen === "STUDENT_PORTAL" || AppState.currentScreen === "LOGIN") {
-    if (bottomNav) bottomNav.style.display = "none";
-  } else {
-    if (bottomNav) bottomNav.style.display = "flex";
+  const isTeacherLoggedIn = AppState.userSession && AppState.userSession.isLoggedIn;
+  const isStudentPortal = AppState.currentScreen === "STUDENT_PORTAL";
+  const isLoginScreen = AppState.currentScreen === "LOGIN" || !isTeacherLoggedIn;
+
+  // Masaüstü gezinme menüsü (Header Nav)
+  const headerNav = document.querySelector("header nav");
+  if (headerNav) {
+    headerNav.style.display = isTeacherLoggedIn && !isStudentPortal ? "flex" : "none";
   }
+
+  // Ayarlar butonu
+  const settingsBtn = document.getElementById("header-settings-btn");
+  if (settingsBtn) {
+    settingsBtn.style.display = isTeacherLoggedIn && !isStudentPortal ? "flex" : "none";
+  }
+
+  // Mobil alt menü
+  const bottomNav = document.getElementById("mobile-bottom-nav");
+  if (bottomNav) {
+    bottomNav.style.display = isTeacherLoggedIn && !isStudentPortal && !isLoginScreen ? "flex" : "none";
+  }
+
+  // Header oturum rozeti / çıkış butonu
+  const sessionBadge = document.getElementById("teacher-session-badge");
+  if (sessionBadge) {
+    if (isTeacherLoggedIn) {
+      sessionBadge.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="hidden lg:inline text-xs font-semibold text-slate-300">
+            <span class="text-amber-400 font-bold">${AppState.userSession.displayName}</span>
+          </span>
+          <button onclick="logoutTeacher()" class="w-9 h-9 rounded-xl bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/30 flex items-center justify-center transition" title="Yönetici Oturumunu Kapat">
+            <i class="fas fa-right-from-bracket text-xs"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      sessionBadge.innerHTML = `
+        <button onclick="navigateTo('LOGIN')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition">
+          <i class="fas fa-lock text-[10px]"></i>
+          <span class="hidden sm:inline">Hoca Girişi</span>
+        </button>
+      `;
+    }
+  }
+}
+
+// =========================================================================
+// 0. YÖNETİCİ & EĞİTMEN GİRİŞ EKRANI (TEACHER LOGIN SCREEN)
+// =========================================================================
+function renderTeacherLoginScreen() {
+  const currentSchoolCode = StorageManager.getSchoolCode();
+
+  return `
+    <div class="max-w-md mx-auto my-6 sm:my-10 space-y-6 pb-16">
+      <!-- 1. Üst Tezhip Başlık Kartı -->
+      <div class="tezhip-card p-6 sm:p-8 bg-gradient-to-b from-[#0D1B2A] to-[#1E293B] text-white text-center relative overflow-hidden shadow-2xl border-2 border-amber-500/40">
+        <div class="ornament-corner-tr"></div>
+        <div class="ornament-corner-bl"></div>
+
+        <div class="seljuk-star gold w-16 h-16 text-3xl mx-auto mb-3 shadow-xl">
+          <i class="fas fa-shield-halved text-[#0D1B2A]"></i>
+        </div>
+        <span class="text-xs font-black tracking-widest text-amber-400 uppercase">MEKTEB-İ İRFAN</span>
+        <h2 class="text-2xl font-black text-white mt-1">Yönetici & Hoca Girişi</h2>
+        <p class="text-xs text-slate-300 mt-1">Ezber, Yoklama ve Talebe Yönetim Paneli</p>
+      </div>
+
+      <!-- 2. Giriş Formu Kartı -->
+      <div class="tezhip-card p-6 space-y-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
+        <!-- Hata Bildirimi -->
+        <div id="teacher-login-error" class="hidden p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-400/40 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+          <i class="fas fa-triangle-exclamation text-sm flex-shrink-0"></i>
+          <span id="teacher-login-error-text">Hatalı bilgi</span>
+        </div>
+
+        <form onsubmit="event.preventDefault(); handleTeacherLoginSubmit();" class="space-y-4">
+          <!-- 1. Kullanıcı Adı veya E-posta -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Yönetici Kullanıcı Adı veya E-posta
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fas fa-user-shield text-xs"></i>
+              </span>
+              <input id="teacher-login-username" type="text" placeholder="Örn: admin veya hoca" required autocomplete="username"
+                class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition">
+            </div>
+          </div>
+
+          <!-- 2. Şifre -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Yönetici Şifresi
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fas fa-lock text-xs"></i>
+              </span>
+              <input id="teacher-login-password" type="password" placeholder="Şifrenizi giriniz (Varsayılan: 1234)" required autocomplete="current-password"
+                class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition">
+              <button type="button" onclick="togglePasswordVisibility('teacher-login-password', 'teacher-login-eye')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <i id="teacher-login-eye" class="fas fa-eye text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Kurum Kodu (İsteğe Bağlı) -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+              <span>Kurum / Medrese Kodu</span>
+              <span class="text-[10px] text-slate-400 font-normal">Varsayılan: ${currentSchoolCode}</span>
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-amber-600">
+                <i class="fas fa-landmark text-xs"></i>
+              </span>
+              <input id="teacher-login-school-code" type="text" value="${currentSchoolCode}" placeholder="Kurum kodu (Örn: irfan_2026)"
+                class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono font-bold uppercase focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition">
+            </div>
+          </div>
+
+          <!-- Giriş Yap Butonu -->
+          <button type="submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#0D1B2A] via-[#1E293B] to-[#0D1B2A] hover:bg-slate-800 text-amber-300 font-black text-sm shadow-xl border border-amber-500/40 flex items-center justify-center gap-2 transition transform active:scale-98">
+            <i class="fas fa-arrow-right-to-bracket"></i>
+            <span>Yönetici Paneline Giriş Yap</span>
+          </button>
+        </form>
+
+        <!-- Hızlı Demo Rol Seçicileri -->
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 text-center">
+            Hızlı Rol Seçimi (Tek Tıkla Doldur):
+          </span>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="fillTeacherLoginForm('admin', '1234', '${currentSchoolCode}')"
+              class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 text-center transition group">
+              <i class="fas fa-user-gear text-amber-600 mb-1 block"></i>
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-600">Admin</div>
+              <div class="text-[10px] text-slate-400 font-mono">1234</div>
+            </button>
+
+            <button type="button" onclick="fillTeacherLoginForm('hoca', '1234', '${currentSchoolCode}')"
+              class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 text-center transition group">
+              <i class="fas fa-chalkboard-user text-emerald-600 mb-1 block"></i>
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600">Hoca</div>
+              <div class="text-[10px] text-slate-400 font-mono">1234</div>
+            </button>
+
+            <button type="button" onclick="fillTeacherLoginForm('hafiz', '1234', '${currentSchoolCode}')"
+              class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 text-center transition group">
+              <i class="fas fa-book-open-reader text-purple-600 mb-1 block"></i>
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600">Hafız</div>
+              <div class="text-[10px] text-slate-400 font-mono">1234</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Talebe Portalına Geçiş Butonu -->
+        <div class="text-center pt-2">
+          <button type="button" onclick="navigateTo('STUDENT_PORTAL')" class="text-xs font-bold text-emerald-600 hover:text-emerald-500 transition flex items-center justify-center gap-1.5 mx-auto">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Talebe Portalı Girişine Geç ➔</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Yönetici Giriş Formu Gönderme (Teacher Login Submit)
+function handleTeacherLoginSubmit() {
+  const usernameInput = document.getElementById("teacher-login-username")?.value;
+  const passwordInput = document.getElementById("teacher-login-password")?.value;
+  const schoolCodeInput = document.getElementById("teacher-login-school-code")?.value;
+  const errorBox = document.getElementById("teacher-login-error");
+  const errorText = document.getElementById("teacher-login-error-text");
+
+  if (errorBox) errorBox.classList.add("hidden");
+
+  const validation = StorageManager.validateTeacherLogin(usernameInput, passwordInput, schoolCodeInput);
+
+  if (!validation.success) {
+    if (errorBox && errorText) {
+      errorText.textContent = validation.message;
+      errorBox.classList.remove("hidden");
+    } else {
+      showToast(validation.message, "error");
+    }
+    return;
+  }
+
+  // Başarılı yönetici girişi
+  AppState.userSession = validation.user;
+  StorageManager.saveTeacherSession(validation.user);
+
+  showToast(`Hoş geldiniz, ${validation.user.displayName}! Yönetim paneli açıldı. 👑`, "success");
+  triggerConfetti();
+  navigateTo("MAIN_MENU");
+}
+
+function fillTeacherLoginForm(username, password, schoolCode) {
+  const uInput = document.getElementById("teacher-login-username");
+  const pInput = document.getElementById("teacher-login-password");
+  const cInput = document.getElementById("teacher-login-school-code");
+  const errorBox = document.getElementById("teacher-login-error");
+
+  if (uInput) uInput.value = username;
+  if (pInput) pInput.value = password;
+  if (cInput) cInput.value = schoolCode;
+  if (errorBox) errorBox.classList.add("hidden");
+
+  showToast(`${username} hesabı seçildi. 'Giriş Yap' butonuna basabilirsiniz.`);
+}
+
+function logoutTeacher() {
+  AppState.userSession = {
+    isLoggedIn: false,
+    username: "",
+    displayName: "",
+    role: ""
+  };
+  StorageManager.clearTeacherSession();
+  showToast("Yönetici oturumu güvenli şekilde kapatıldı.");
+  navigateTo("LOGIN");
 }
 
 // =========================================================================

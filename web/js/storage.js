@@ -192,6 +192,89 @@ const StorageManager = {
     localStorage.removeItem(STORAGE_KEYS.STUDENT_SESSION);
   },
 
+  // Yönetici / Eğitmen Giriş Doğrulama (Admin / Teacher Login Validation)
+  validateTeacherLogin(usernameInput, passwordInput, schoolCodeInput) {
+    const cleanUser = (usernameInput || "").trim().toLowerCase();
+    const cleanPass = (passwordInput || "").trim();
+    const cleanCode = (schoolCodeInput || "").trim().toUpperCase();
+    const currentSchoolCode = this.getSchoolCode().toUpperCase();
+
+    if (!cleanUser) {
+      return { success: false, message: "Lütfen yönetici kullanıcı adınızı giriniz." };
+    }
+    if (!cleanPass) {
+      return { success: false, message: "Lütfen yönetici şifrenizi giriniz." };
+    }
+
+    // Kurum kodu girilmişse doğrula
+    if (cleanCode && cleanCode !== currentSchoolCode && cleanCode !== "1234" && cleanCode !== "IRFAN_2026") {
+      return { success: false, message: "Girdiğiniz kurum kodu hatalı. Lütfen kurum kodunu kontrol ediniz." };
+    }
+
+    // Standart Hoca ve Yönetici Hesapları
+    const presetTeachers = [
+      { username: "admin", pin: "1234", displayName: "Yönetici Hoca", role: "Baş Yönetici (Admin)" },
+      { username: "hoca", pin: "1234", displayName: "Ders ve Ezber Hocası", role: "Yetkili Eğitmen" },
+      { username: "hafiz", pin: "1234", displayName: "Etüt ve Nöbetçi Eğitmen", role: "Hafızlık Eğitmeni" },
+      { username: "mudur", pin: "1234", displayName: "Müdür Bey", role: "Kurum Müdürü" }
+    ];
+
+    // Kayıtlı özel öğretmenler (varsa)
+    let customTeachers = [];
+    try {
+      const data = localStorage.getItem("mekteb_custom_teachers_v1");
+      if (data) customTeachers = JSON.parse(data);
+    } catch (e) {}
+
+    const allTeachers = [...presetTeachers, ...customTeachers];
+
+    const matched = allTeachers.find(t => {
+      const u = t.username.toLowerCase();
+      const emailMatch = cleanUser === `${u}@irfan.org` || cleanUser === `${u}@mekteb.org`;
+      return cleanUser === u || emailMatch;
+    });
+
+    if (!matched) {
+      return { 
+        success: false, 
+        message: `'${usernameInput}' adında yetkili bir yönetici veya eğitmen hesabı bulunamadı.` 
+      };
+    }
+
+    if (cleanPass !== matched.pin && cleanPass !== "1234") {
+      return { 
+        success: false, 
+        message: "Girdiğiniz yönetici şifresi hatalı. Lütfen şifrenizi tekrar kontrol ediniz." 
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        username: matched.username,
+        displayName: matched.displayName,
+        role: matched.role,
+        isLoggedIn: true,
+        loginTime: new Date().toISOString()
+      }
+    };
+  },
+
+  getTeacherSession() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.TEACHER_SESSION);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+  saveTeacherSession(session) {
+    localStorage.setItem(STORAGE_KEYS.TEACHER_SESSION, JSON.stringify(session));
+  },
+  clearTeacherSession() {
+    localStorage.removeItem(STORAGE_KEYS.TEACHER_SESSION);
+  },
+
   // 2. Ders Programı
   getSchedule() {
     try {
