@@ -37,6 +37,10 @@ function getTodayDayOfWeek() {
 // Uygulama Başlatma
 document.addEventListener("DOMContentLoaded", () => {
   StorageManager.init();
+  const savedStudentSession = StorageManager.getStudentSession();
+  if (savedStudentSession && savedStudentSession.student) {
+    AppState.studentSession = savedStudentSession;
+  }
   applyTheme(AppState.theme);
   setupGlobalListeners();
   navigateTo(AppState.currentScreen);
@@ -831,10 +835,46 @@ function renderStudentsScreen(students, memorization, attendance, duties) {
                   </div>
                 </div>
 
-                <button onclick="deleteStudent(${st.id})" class="text-slate-400 hover:text-rose-500 p-1"><i class="fas fa-trash-alt text-xs"></i></button>
+                <div class="flex items-center gap-1">
+                  <button onclick="openEditStudentModal(${st.id})" class="text-slate-400 hover:text-amber-500 p-1.5 transition" title="Talebe Bilgilerini & Giriş Kodunu Düzenle">
+                    <i class="fas fa-user-pen text-sm"></i>
+                  </button>
+                  <button onclick="deleteStudent(${st.id})" class="text-slate-400 hover:text-rose-500 p-1.5 transition" title="Talebeliği Kaldır">
+                    <i class="fas fa-trash-alt text-sm"></i>
+                  </button>
+                </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-2 text-center pt-2 border-t border-slate-100 dark:border-slate-800">
+              <!-- Yönetici Tarafından Verilen Giriş & Erişim Bilgileri -->
+              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <i class="fas fa-user text-[11px] text-slate-400"></i> Kullanıcı Adı:
+                  </span>
+                  <span class="font-bold text-slate-800 dark:text-slate-200 font-mono">${st.username || 'talebe' + st.id}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <i class="fas fa-lock text-[11px] text-slate-400"></i> Şifre:
+                  </span>
+                  <span class="font-bold text-slate-800 dark:text-slate-200 font-mono">${st.pin || '1234'}</span>
+                </div>
+                <div class="flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-slate-800">
+                  <span class="font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                    <i class="fas fa-key text-[11px]"></i> Giriş Kodu:
+                  </span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded font-mono font-black text-xs bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border border-amber-500/40">
+                      ${st.accessCode || 'IRF-' + st.id}
+                    </span>
+                    <button onclick="copyToClipboard('${st.accessCode || 'IRF-' + st.id}', '${st.fullName} giriş kodu kopyalandı!')" class="p-1 text-slate-400 hover:text-amber-500 transition" title="Kodu Kopyala">
+                      <i class="fas fa-copy text-xs"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-center pt-1">
                 <div class="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg">
                   <div class="text-[10px] text-slate-400">Tamamlanan</div>
                   <div class="text-sm font-bold text-emerald-600">${completedCount} Ezber</div>
@@ -960,6 +1000,8 @@ function renderReportsScreen(students, memorization, attendance, duties) {
 // 7. AYARLAR VE VERİ YEDEKLEME
 // =========================================================================
 function renderSettingsScreen() {
+  const currentSchoolCode = StorageManager.getSchoolCode();
+
   return `
     <div class="space-y-6 pb-20 max-w-4xl mx-auto">
       <div class="tezhip-card p-4 flex items-center gap-3">
@@ -968,10 +1010,42 @@ function renderSettingsScreen() {
         </button>
         <div>
           <h1 class="text-xl font-black text-slate-900 dark:text-white">Ayarlar ve Veri Yönetimi</h1>
-          <p class="text-xs text-slate-500">Firestore bulut yapılandırması & JSON yedekleme</p>
+          <p class="text-xs text-slate-500">Kurum kodu, talebe erişim ayarları & veri yedekleme</p>
         </div>
       </div>
 
+      <!-- Kurum ve Genel Giriş Kodu Yönetimi -->
+      <div class="tezhip-card p-6 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="seljuk-star gold w-10 h-10 text-lg"><i class="fas fa-key"></i></div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Genel Kurum / Medrese Giriş Kodu</h3>
+            <p class="text-xs text-slate-500">Talebelerin sisteme giriş yaparken kullanabileceği genel kurum kodunu belirleyin.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2">
+          <div class="relative w-full sm:w-72">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-amber-600">
+              <i class="fas fa-shield-halved text-xs"></i>
+            </span>
+            <input id="settings-school-code" type="text" value="${currentSchoolCode}" class="w-full pl-9 pr-3 py-2 text-sm font-mono font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white uppercase">
+          </div>
+          <button onclick="updateSchoolCodeFromSettings()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-2">
+            <i class="fas fa-floppy-disk"></i>
+            <span>Kodu Kaydet</span>
+          </button>
+          <button onclick="generateSchoolCodeInput()" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/40 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5">
+            <i class="fas fa-dice"></i>
+            <span>Yeni Kod Üret</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-400">
+          Not: Talebeler hem kendilerine özel verilen giriş koduyla (Örn: <code>IRF-101</code>) hem de bu genel kurum koduyla giriş yapabilirler.
+        </p>
+      </div>
+
+      <!-- Veri Yedekleme & Geri Yükleme -->
       <div class="tezhip-card p-6 space-y-5">
         <h3 class="text-base font-bold text-slate-900 dark:text-white">Veri Yedekleme & Geri Yükleme</h3>
         <p class="text-xs text-slate-500">Tüm talebe, ezber, ders programı ve yoklama verilerinizi JSON dosyası olarak bilgisayarınıza indirebilir veya yükleyebilirsiniz.</p>
@@ -994,10 +1068,16 @@ function renderSettingsScreen() {
 }
 
 // =========================================================================
-// 8. TALEBE PORTALI (ÖĞRENCİ KENDİ PANELİ)
+// 8. TALEBE PORTALI (ÖĞRENCİ KENDİ PANELİ VE GİRİŞ EKRANI)
 // =========================================================================
 function renderStudentPortalScreen(students, memorization, duties) {
-  const currentStudent = AppState.studentSession.student || students[0];
+  // Eğer talebe giriş yapmamışsa, Talebe Giriş Formunu göster
+  if (!AppState.studentSession || !AppState.studentSession.isLoggedIn || !AppState.studentSession.student) {
+    return renderStudentLoginView(students);
+  }
+
+  // Giriş yapmış talebenin bilgileri
+  const currentStudent = AppState.studentSession.student;
   const stMem = memorization.filter(m => m.studentId === currentStudent.id);
   const activeMem = stMem.filter(m => m.status === "DEVAM_EDIYOR");
   const completedMem = stMem.filter(m => m.status === "TAMAMLANDI");
@@ -1007,38 +1087,94 @@ function renderStudentPortalScreen(students, memorization, duties) {
     <div class="space-y-6 pb-20 max-w-5xl mx-auto">
       <!-- Talebe Portalı Üst Banner -->
       <div class="tezhip-card p-6 bg-gradient-to-r from-emerald-900 via-[#0D1B2A] to-emerald-950 text-white relative">
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="ornament-corner-tr"></div>
+        <div class="ornament-corner-bl"></div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
           <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-full flex items-center justify-center font-black text-xl text-white bg-gradient-to-tr from-amber-400 to-amber-600 shadow-lg">
+            <div class="w-14 h-14 rounded-full flex items-center justify-center font-black text-xl text-white bg-gradient-to-tr from-amber-400 to-amber-600 shadow-lg border-2 border-amber-300">
               ${currentStudent.fullName.split(' ').map(n => n[0]).join('')}
             </div>
             <div>
-              <span class="text-xs text-amber-300 font-bold uppercase tracking-wider">Talebe Portalı</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-amber-300 font-bold uppercase tracking-wider">Talebe Portalı</span>
+                <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                  <i class="fas fa-key mr-1"></i>Kod: ${currentStudent.accessCode || 'IRF-' + currentStudent.id}
+                </span>
+              </div>
               <h1 class="text-2xl font-black text-white">${currentStudent.fullName}</h1>
-              <p class="text-xs text-emerald-200">${currentStudent.grade} • ${completedMem.length} Tamamlanan Ezber</p>
+              <p class="text-xs text-emerald-200">${currentStudent.grade} • Kullanıcı: @${currentStudent.username || 'talebe' + currentStudent.id} • ${completedMem.length} Tamamlanan Ezber</p>
             </div>
           </div>
 
-          <button onclick="navigateTo('MAIN_MENU')" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20">
-            <i class="fas fa-arrow-left mr-1"></i> Eğitmen Paneline Dön
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="logoutStudentPortal()" class="px-3.5 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs shadow transition flex items-center gap-1.5">
+              <i class="fas fa-right-from-bracket"></i>
+              <span>Oturumu Kapat</span>
+            </button>
+            <button onclick="navigateTo('MAIN_MENU')" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center gap-1.5">
+              <i class="fas fa-chalkboard-user text-amber-300"></i>
+              <span>Eğitmen Paneli</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Talebe Aktif Ezberleri -->
       <div class="tezhip-card p-5">
-        <h3 class="text-base font-black text-slate-900 dark:text-white mb-3">📖 Devam Eden Ezberlerin</h3>
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="seljuk-star purple w-7 h-7 text-xs text-white"><i class="fas fa-book-quran"></i></div>
+            <h3 class="text-base font-black text-slate-900 dark:text-white">Devam Eden Ezberlerin (${activeMem.length})</h3>
+          </div>
+          <span class="text-xs font-bold text-purple-600 dark:text-purple-400">${completedMem.length} Ezber Teslim Edildi</span>
+        </div>
+
         <div class="space-y-3">
           ${activeMem.length === 0 ? `
-            <p class="text-xs text-slate-400 py-3">Şu an devam eden bir ezberiniz bulunmamaktadır.</p>
+            <div class="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+              <i class="fas fa-check-circle text-2xl text-emerald-500 mb-2"></i>
+              <p class="text-xs">Şu an devam eden bir ezberiniz bulunmamaktadır. Hocanızdan yeni ezber talep edebilirsiniz.</p>
+            </div>
           ` : activeMem.map(m => `
-            <div class="p-4 rounded-xl border border-purple-500/30 bg-purple-50/20 dark:bg-purple-950/20 flex items-center justify-between">
+            <div class="p-4 rounded-xl border border-purple-500/30 bg-purple-50/20 dark:bg-purple-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span class="text-[11px] font-bold text-purple-600">${m.category}</span>
+                <span class="text-[11px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">${m.category}</span>
                 <h4 class="text-base font-black text-slate-900 dark:text-white">${m.title}</h4>
-                <p class="text-xs text-slate-500 mt-1">Hoca Notu: <span class="italic text-slate-700 dark:text-slate-300">${m.teacherNotes || 'Çalışmaya devam ediniz.'}</span></p>
+                <p class="text-xs text-slate-500 mt-1">Hoca Değerlendirmesi: <span class="italic text-slate-700 dark:text-slate-300 font-semibold">${m.teacherNotes || 'Çalışmaya ve tekrara devam ediniz.'}</span></p>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">Devam Ediyor</span>
+              <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+                  <i class="fas fa-spinner fa-spin mr-1 text-[10px]"></i> Çalışılıyor
+                </span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Tamamlanan Ezberler ve Alınan Yıldızlar -->
+      <div class="tezhip-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="seljuk-star gold w-7 h-7 text-xs"><i class="fas fa-award"></i></div>
+          <h3 class="text-base font-black text-slate-900 dark:text-white">Tamamlanan ve Onaylanan Ezberler (${completedMem.length})</h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ${completedMem.length === 0 ? `
+            <div class="col-span-2 p-4 text-center text-slate-400 text-xs">Henüz onaylanmış ezber bulunmuyor.</div>
+          ` : completedMem.map(m => `
+            <div class="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-50/10 dark:bg-emerald-950/20 flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="text-sm font-bold text-slate-900 dark:text-white">${m.title}</h4>
+                  <span class="text-amber-500 text-xs font-bold">${'★'.repeat(m.rating || 5)}</span>
+                </div>
+                <p class="text-[11px] text-slate-500">${m.category} • ${m.completedDate || 'Onaylandı'}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                Kabul Edildi ✓
+              </span>
             </div>
           `).join('')}
         </div>
@@ -1046,7 +1182,14 @@ function renderStudentPortalScreen(students, memorization, duties) {
 
       <!-- Talebe Günlük Vazifeleri -->
       <div class="tezhip-card p-5">
-        <h3 class="text-base font-black text-slate-900 dark:text-white mb-3">🕌 Günlük Vazifelerin (${AppState.selectedDate})</h3>
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="seljuk-star emerald w-7 h-7 text-xs text-white"><i class="fas fa-hands-praying"></i></div>
+            <h3 class="text-base font-black text-slate-900 dark:text-white">Bugünkü Vazifelerin (${AppState.selectedDate})</h3>
+          </div>
+          <span class="text-xs text-slate-400">Namaz & Vird Durumu</span>
+        </div>
+
         <div class="grid grid-cols-5 gap-2 text-center">
           ${['Sabah', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'].map((p, idx) => {
             const key = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'][idx];
@@ -1058,6 +1201,140 @@ function renderStudentPortalScreen(students, memorization, duties) {
               </div>
             `;
           }).join('')}
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900">
+            <span class="text-[11px] text-slate-400 block">Kur'an Tilaveti</span>
+            <span class="text-sm font-bold text-blue-600">${todayDuty.quranPages || 0} Sayfa</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900">
+            <span class="text-[11px] text-slate-400 block">Risale Okuması</span>
+            <span class="text-sm font-bold text-purple-600">${todayDuty.risalePages || 0} Sayfa</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900">
+            <span class="text-[11px] text-slate-400 block">Salavat-ı Şerife</span>
+            <span class="text-sm font-bold text-amber-600">${todayDuty.salavatCount || 0} Adet</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// =========================================================================
+// TALEBE GİRİŞ EKRANI (STUDENT LOGIN VIEW)
+// =========================================================================
+function renderStudentLoginView(students) {
+  const activeStudents = students.filter(s => s.status === "Aktif");
+
+  return `
+    <div class="max-w-md mx-auto my-6 sm:my-10 space-y-6 pb-16">
+      <!-- 1. Üst Tezhip Başlık Kartı -->
+      <div class="tezhip-card p-6 sm:p-8 bg-gradient-to-b from-[#0D1B2A] to-[#1E293B] text-white text-center relative overflow-hidden shadow-2xl border-2 border-amber-500/40">
+        <div class="ornament-corner-tr"></div>
+        <div class="ornament-corner-bl"></div>
+
+        <div class="seljuk-star gold w-16 h-16 text-3xl mx-auto mb-3 shadow-xl">
+          <i class="fas fa-graduation-cap text-[#0D1B2A]"></i>
+        </div>
+        <span class="text-xs font-black tracking-widest text-amber-400 uppercase">MEKTEB-İ İRFAN</span>
+        <h2 class="text-2xl font-black text-white mt-1">Talebe Giriş Portalı</h2>
+        <p class="text-xs text-slate-300 mt-1">Ezber ve Günlük Vazife Takip Sisteminize Erişin</p>
+      </div>
+
+      <!-- 2. Giriş Formu Kartı -->
+      <div class="tezhip-card p-6 space-y-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
+        <!-- Hata Bildirimi -->
+        <div id="student-login-error" class="hidden p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-400/40 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+          <i class="fas fa-triangle-exclamation text-sm flex-shrink-0"></i>
+          <span id="student-login-error-text">Hatalı bilgi</span>
+        </div>
+
+        <form onsubmit="event.preventDefault(); handleStudentLoginSubmit();" class="space-y-4">
+          <!-- 1. Kullanıcı Adı veya Öğrenci No -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Kullanıcı Adı veya Talebe No
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fas fa-user text-xs"></i>
+              </span>
+              <input id="student-login-username" type="text" placeholder="Örn: ahmet101 veya 101" required autocomplete="username"
+                class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition">
+            </div>
+          </div>
+
+          <!-- 2. Şifre -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Şifre
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fas fa-lock text-xs"></i>
+              </span>
+              <input id="student-login-password" type="password" placeholder="Şifrenizi giriniz (Varsayılan: 1234)" required autocomplete="current-password"
+                class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition">
+              <button type="button" onclick="togglePasswordVisibility('student-login-password', 'student-login-eye')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <i id="student-login-eye" class="fas fa-eye text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Yönetici / Hoca Tarafından Verilen Giriş Kodu -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <i class="fas fa-key text-amber-600 text-xs"></i>
+                <span>Giriş Kodu (Erişim Kodu)</span>
+              </label>
+              <span class="text-[10px] text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">
+                Yönetici Tarafından Verilen
+              </span>
+            </div>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-amber-600">
+                <i class="fas fa-shield-halved text-xs"></i>
+              </span>
+              <input id="student-login-code" type="text" placeholder="Örn: IRF-101 veya irfan_2026" required
+                class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-amber-500/40 bg-amber-50/20 dark:bg-amber-950/20 text-slate-900 dark:text-white text-sm font-mono font-bold uppercase focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition">
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              💡 Her öğrencinin sisteme girebilmesi için medrese yöneticisi / hocası tarafından verilen giriş kodu girilmelidir.
+            </p>
+          </div>
+
+          <!-- Giriş Yap Butonu -->
+          <button type="submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 transition transform active:scale-98">
+            <i class="fas fa-arrow-right-to-bracket"></i>
+            <span>Sisteme Giriş Yap</span>
+          </button>
+        </form>
+
+        <!-- Hızlı Demo Talebe Doldurucusu -->
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 text-center">
+            Demo / Test Talebeleri (Tek Tıkla Doldur):
+          </span>
+          <div class="grid grid-cols-2 gap-2">
+            ${activeStudents.slice(0, 4).map(st => `
+              <button type="button" onclick="fillStudentLoginForm('${st.username || 'talebe' + st.id}', '${st.pin || '1234'}', '${st.accessCode || 'IRF-' + st.id}')"
+                class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 text-left transition group">
+                <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-600 truncate">${st.fullName}</div>
+                <div class="text-[10px] text-slate-500 font-mono mt-0.5">Kod: <span class="font-bold text-amber-600">${st.accessCode || 'IRF-' + st.id}</span></div>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Eğitmen Paneline Dön -->
+        <div class="text-center pt-2">
+          <button type="button" onclick="navigateTo('MAIN_MENU')" class="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition flex items-center justify-center gap-1.5 mx-auto">
+            <i class="fas fa-arrow-left text-[10px]"></i>
+            <span>Eğitmen / Yönetici Paneline Dön</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1142,19 +1419,30 @@ function openNewStudentModal() {
   const modalContent = document.getElementById("generic-modal-body");
   if (!modal || !modalContent) return;
 
+  const students = StorageManager.getStudents();
+  const nextNo = students.length > 0 ? Math.max(...students.map(s => parseInt(s.studentNumber || s.id) || 100)) + 1 : 101;
+  const generatedCode = "IRF-" + nextNo;
+
   modalContent.innerHTML = `
     <div class="p-6 space-y-4">
-      <h3 class="text-lg font-black text-slate-900 dark:text-white">Yeni Talebe Kaydı</h3>
+      <div class="flex items-center gap-3">
+        <div class="seljuk-star gold w-10 h-10 text-lg"><i class="fas fa-user-plus"></i></div>
+        <div>
+          <h3 class="text-lg font-black text-slate-900 dark:text-white">Yeni Talebe Kaydı</h3>
+          <p class="text-xs text-slate-500">Talebe bilgileri, şifre ve yönetici giriş kodu tanımlayın</p>
+        </div>
+      </div>
       
       <div class="space-y-3 text-sm">
         <div>
-          <label class="text-xs font-bold text-slate-500 block mb-1">Ad Soyad</label>
-          <input id="modal-student-name" type="text" placeholder="Örn: Bedirhan Demir" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <label class="text-xs font-bold text-slate-500 block mb-1">Ad Soyad *</label>
+          <input id="modal-student-name" type="text" placeholder="Örn: Bedirhan Demir" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
         </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-xs font-bold text-slate-500 block mb-1">Sınıf / Halka</label>
-            <select id="modal-student-grade" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            <select id="modal-student-grade" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
               <option value="5. Sınıf">5. Sınıf</option>
               <option value="6. Sınıf">6. Sınıf</option>
               <option value="7. Sınıf">7. Sınıf</option>
@@ -1163,15 +1451,128 @@ function openNewStudentModal() {
             </select>
           </div>
           <div>
-            <label class="text-xs font-bold text-slate-500 block mb-1">Öğrenci No / PIN</label>
-            <input id="modal-student-no" type="text" value="107" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            <label class="text-xs font-bold text-slate-500 block mb-1">Öğrenci No</label>
+            <input id="modal-student-no" type="text" value="${nextNo}" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
           </div>
+        </div>
+
+        <!-- Kullanıcı Adı ve Şifre -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold text-slate-500 block mb-1">Kullanıcı Adı</label>
+            <input id="modal-student-username" type="text" value="talebe${nextNo}" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-500 block mb-1">Şifre</label>
+            <input id="modal-student-pin" type="text" value="1234" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs">
+          </div>
+        </div>
+
+        <!-- Yönetici Tarafından Verilen Giriş Kodu -->
+        <div class="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-500/30">
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+              <i class="fas fa-key text-xs"></i> Yönetici Giriş Kodu (Erişim Kodu)
+            </label>
+            <button type="button" onclick="generateRandomAccessCode('modal-student-code')" class="text-[11px] font-bold text-amber-700 hover:text-amber-600 flex items-center gap-1">
+              <i class="fas fa-dice"></i> Kod Üret
+            </button>
+          </div>
+          <input id="modal-student-code" type="text" value="${generatedCode}" class="w-full p-2.5 rounded-xl border border-amber-500/40 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold uppercase text-sm">
+          <p class="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
+            Talebe sisteme girerken kullanıcı adı ve şifresinin yanında bu kodu girmek zorundadır.
+          </p>
         </div>
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
         <button onclick="closeModal()" class="px-4 py-2 text-xs font-bold text-slate-500">İptal</button>
-        <button onclick="saveNewStudentFromModal()" class="px-4 py-2 bg-blue-900 text-amber-300 text-xs font-bold rounded-xl">Kaydet</button>
+        <button onclick="saveNewStudentFromModal()" class="px-4 py-2 bg-blue-900 text-amber-300 text-xs font-bold rounded-xl shadow hover:bg-blue-800 transition">Kaydet</button>
+      </div>
+    </div>
+  `;
+  modal.classList.remove("hidden");
+}
+
+function openEditStudentModal(studentId) {
+  const modal = document.getElementById("generic-modal");
+  const modalContent = document.getElementById("generic-modal-body");
+  if (!modal || !modalContent) return;
+
+  const students = StorageManager.getStudents();
+  const student = students.find(s => s.id === studentId);
+  if (!student) return;
+
+  modalContent.innerHTML = `
+    <div class="p-6 space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="seljuk-star gold w-10 h-10 text-lg"><i class="fas fa-user-pen"></i></div>
+        <div>
+          <h3 class="text-lg font-black text-slate-900 dark:text-white">Talebe Bilgilerini Düzenle</h3>
+          <p class="text-xs text-slate-500">${student.fullName} • No: ${student.studentNumber || student.id}</p>
+        </div>
+      </div>
+      
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="text-xs font-bold text-slate-500 block mb-1">Ad Soyad</label>
+          <input id="modal-edit-name" type="text" value="${student.fullName}" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold text-slate-500 block mb-1">Sınıf / Halka</label>
+            <select id="modal-edit-grade" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+              <option value="5. Sınıf" ${student.grade === '5. Sınıf' ? 'selected' : ''}>5. Sınıf</option>
+              <option value="6. Sınıf" ${student.grade === '6. Sınıf' ? 'selected' : ''}>6. Sınıf</option>
+              <option value="7. Sınıf" ${student.grade === '7. Sınıf' ? 'selected' : ''}>7. Sınıf</option>
+              <option value="8. Sınıf" ${student.grade === '8. Sınıf' ? 'selected' : ''}>8. Sınıf</option>
+              <option value="Hafızlık Grubu" ${student.grade === 'Hafızlık Grubu' ? 'selected' : ''}>Hafızlık Grubu</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-500 block mb-1">Öğrenci No</label>
+            <input id="modal-edit-no" type="text" value="${student.studentNumber || student.id}" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <!-- Kullanıcı Adı ve Şifre -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold text-slate-500 block mb-1">Kullanıcı Adı</label>
+            <input id="modal-edit-username" type="text" value="${student.username || 'talebe' + student.id}" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-500 block mb-1">Şifre</label>
+            <input id="modal-edit-pin" type="text" value="${student.pin || '1234'}" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs">
+          </div>
+        </div>
+
+        <!-- Yönetici Tarafından Verilen Giriş Kodu -->
+        <div class="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-500/30">
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+              <i class="fas fa-key text-xs"></i> Yönetici Giriş Kodu (Erişim Kodu)
+            </label>
+            <button type="button" onclick="generateRandomAccessCode('modal-edit-code')" class="text-[11px] font-bold text-amber-700 hover:text-amber-600 flex items-center gap-1">
+              <i class="fas fa-dice"></i> Yeni Kod Üret
+            </button>
+          </div>
+          <input id="modal-edit-code" type="text" value="${student.accessCode || 'IRF-' + student.id}" class="w-full p-2.5 rounded-xl border border-amber-500/40 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold uppercase text-sm">
+          <p class="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
+            Talebe giriş ekranında bu kodu kullanarak sisteme dahil olacaktır.
+          </p>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-500 block mb-1">Hoca Değerlendirme & Notu</label>
+          <textarea id="modal-edit-notes" rows="2" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs">${student.notes || ''}</textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <button onclick="closeModal()" class="px-4 py-2 text-xs font-bold text-slate-500">İptal</button>
+        <button onclick="saveEditStudentFromModal(${student.id})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition">Güncelle</button>
       </div>
     </div>
   `;
@@ -1473,23 +1874,200 @@ function saveNewStudentFromModal() {
   const name = document.getElementById("modal-student-name")?.value;
   const grade = document.getElementById("modal-student-grade")?.value;
   const no = document.getElementById("modal-student-no")?.value;
+  const username = document.getElementById("modal-student-username")?.value;
+  const pin = document.getElementById("modal-student-pin")?.value;
+  const accessCode = document.getElementById("modal-student-code")?.value;
 
-  if (!name) {
+  if (!name || !name.trim()) {
     alert("Lütfen talebe adını giriniz.");
     return;
   }
 
   StorageManager.addStudent({
-    fullName: name,
-    grade,
-    studentNumber: no,
+    fullName: name.trim(),
+    grade: grade || "5. Sınıf",
+    studentNumber: no || "100",
+    username: (username && username.trim()) || ("talebe" + (no || Date.now())),
+    pin: (pin && pin.trim()) || "1234",
+    accessCode: (accessCode && accessCode.trim().toUpperCase()) || ("IRF-" + (no || Date.now())),
     status: "Aktif",
     joinDate: new Date().toISOString().split('T')[0]
   });
 
   closeModal();
-  showToast("Yeni talebe başarıyla kaydedildi.");
+  showToast("Yeni talebe, şifre ve giriş kodu başarıyla kaydedildi! 🌿");
   renderApp();
+}
+
+function saveEditStudentFromModal(studentId) {
+  const name = document.getElementById("modal-edit-name")?.value;
+  const grade = document.getElementById("modal-edit-grade")?.value;
+  const no = document.getElementById("modal-edit-no")?.value;
+  const username = document.getElementById("modal-edit-username")?.value;
+  const pin = document.getElementById("modal-edit-pin")?.value;
+  const accessCode = document.getElementById("modal-edit-code")?.value;
+  const notes = document.getElementById("modal-edit-notes")?.value;
+
+  if (!name || !name.trim()) {
+    alert("Lütfen talebe adını giriniz.");
+    return;
+  }
+
+  const students = StorageManager.getStudents();
+  const student = students.find(s => s.id === studentId);
+  if (!student) return;
+
+  const updatedStudent = {
+    ...student,
+    fullName: name.trim(),
+    grade: grade || student.grade,
+    studentNumber: no || student.studentNumber,
+    username: (username && username.trim()) || student.username,
+    pin: (pin && pin.trim()) || student.pin || "1234",
+    accessCode: (accessCode && accessCode.trim().toUpperCase()) || student.accessCode || ("IRF-" + student.id),
+    notes: notes || student.notes
+  };
+
+  StorageManager.updateStudent(updatedStudent);
+
+  // Eğer şu an giriş yapan talebe bu öğrenciyse oturumu da güncelle
+  if (AppState.studentSession?.student?.id === studentId) {
+    AppState.studentSession.student = updatedStudent;
+    StorageManager.saveStudentSession(updatedStudent);
+  }
+
+  closeModal();
+  showToast("Talebe ve giriş bilgileri güncellendi! ✅");
+  renderApp();
+}
+
+// Talebe Giriş Formu Gönderme (Login Submit Handler)
+function handleStudentLoginSubmit() {
+  const usernameInput = document.getElementById("student-login-username")?.value;
+  const passwordInput = document.getElementById("student-login-password")?.value;
+  const codeInput = document.getElementById("student-login-code")?.value;
+  const errorBox = document.getElementById("student-login-error");
+  const errorText = document.getElementById("student-login-error-text");
+
+  if (errorBox) errorBox.classList.add("hidden");
+
+  const validation = StorageManager.validateStudentLogin(usernameInput, passwordInput, codeInput);
+
+  if (!validation.success) {
+    if (errorBox && errorText) {
+      errorText.textContent = validation.message;
+      errorBox.classList.remove("hidden");
+    } else {
+      showToast(validation.message, "error");
+    }
+    return;
+  }
+
+  // Başarılı giriş
+  const student = validation.student;
+  AppState.studentSession = {
+    isLoggedIn: true,
+    student: student
+  };
+  StorageManager.saveStudentSession(student);
+
+  showToast(`Hoş geldin, ${student.fullName}! Sisteme başarıyla giriş yapıldı. 🌟`, "success");
+  triggerConfetti();
+  renderApp();
+}
+
+// Hızlı Demo Talebe Doldurucu
+function fillStudentLoginForm(username, pin, accessCode) {
+  const uInput = document.getElementById("student-login-username");
+  const pInput = document.getElementById("student-login-password");
+  const cInput = document.getElementById("student-login-code");
+  const errorBox = document.getElementById("student-login-error");
+
+  if (uInput) uInput.value = username;
+  if (pInput) pInput.value = pin;
+  if (cInput) cInput.value = accessCode;
+  if (errorBox) errorBox.classList.add("hidden");
+
+  showToast(`${username} bilgileri ve kodu dolduruldu. 'Giriş Yap' butonuna basabilirsiniz.`);
+}
+
+// Şifre Göster/Gizle Butonu
+function togglePasswordVisibility(inputId, eyeIconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(eyeIconId);
+  if (!input) return;
+
+  if (input.type === "password") {
+    input.type = "text";
+    if (icon) icon.className = "fas fa-eye-slash text-xs text-amber-500";
+  } else {
+    input.type = "password";
+    if (icon) icon.className = "fas fa-eye text-xs text-slate-400";
+  }
+}
+
+// Talebe Portalı Oturum Kapatma
+function logoutStudentPortal() {
+  AppState.studentSession = {
+    isLoggedIn: false,
+    student: null
+  };
+  StorageManager.clearStudentSession();
+  showToast("Talebe oturumu güvenli şekilde kapatıldı.");
+  renderApp();
+}
+
+// Rastgele Giriş Kodu Üretici
+function generateRandomAccessCode(targetInputId) {
+  const randNum = Math.floor(100 + Math.random() * 900);
+  const code = "IRF-" + randNum;
+  const input = document.getElementById(targetInputId);
+  if (input) {
+    input.value = code;
+    showToast(`Yeni kod üretildi: ${code}`);
+  }
+  return code;
+}
+
+// Metin Kopyalama Yardımcısı
+function copyToClipboard(text, message = "Kopyalandı!") {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast(message)).catch(() => fallbackCopy(text, message));
+  } else {
+    fallbackCopy(text, message);
+  }
+}
+
+function fallbackCopy(text, message) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textArea);
+  showToast(message);
+}
+
+// Ayarlardan Kurum Kodunu Güncelleme
+function updateSchoolCodeFromSettings() {
+  const input = document.getElementById("settings-school-code");
+  const code = input ? input.value : "";
+  if (!code.trim()) {
+    alert("Lütfen geçerli bir kurum kodu giriniz.");
+    return;
+  }
+  StorageManager.saveSchoolCode(code);
+  showToast(`Genel medrese/kurum giriş kodu güncellendi: ${code.trim().toUpperCase()} ✅`);
+  renderApp();
+}
+
+function generateSchoolCodeInput() {
+  const input = document.getElementById("settings-school-code");
+  if (input) {
+    const newCode = "IRFAN_" + (Math.floor(1000 + Math.random() * 9000));
+    input.value = newCode;
+    showToast(`Yeni kurum kodu önerildi: ${newCode}`);
+  }
 }
 
 function deleteStudent(id) {

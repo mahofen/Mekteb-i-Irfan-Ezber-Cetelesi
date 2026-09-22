@@ -46,6 +46,7 @@ const DEFAULT_STUDENTS = [
   {
     id: 101,
     studentNumber: "101",
+    username: "ahmet101",
     fullName: "Ahmet Yılmaz",
     grade: "7. Sınıf",
     status: "Aktif",
@@ -53,11 +54,13 @@ const DEFAULT_STUDENTS = [
     parentPhone: "0532 100 2030",
     joinDate: "2025-09-15",
     pin: "1234",
+    accessCode: "IRF-101",
     notes: "Ezber kabiliyeti çok yüksek, tecvidi iyi."
   },
   {
     id: 102,
     studentNumber: "102",
+    username: "mehmet102",
     fullName: "Mehmet Akif Kaya",
     grade: "Hafızlık Grubu",
     status: "Aktif",
@@ -65,11 +68,13 @@ const DEFAULT_STUDENTS = [
     parentPhone: "0533 200 4050",
     joinDate: "2025-09-10",
     pin: "1234",
+    accessCode: "IRF-102",
     notes: "30. Cüz ezberini tamamladı, Yâsin sûresine geçti."
   },
   {
     id: 103,
     studentNumber: "103",
+    username: "omer103",
     fullName: "Ömer Faruk Demir",
     grade: "8. Sınıf",
     status: "Aktif",
@@ -77,11 +82,13 @@ const DEFAULT_STUDENTS = [
     parentPhone: "0542 300 5060",
     joinDate: "2025-10-01",
     pin: "1234",
+    accessCode: "IRF-103",
     notes: "Namaz tesbihatlarını eksiksiz veriyor."
   },
   {
     id: 104,
     studentNumber: "104",
+    username: "mustafa104",
     fullName: "Mustafa Enes Çelik",
     grade: "6. Sınıf",
     status: "Aktif",
@@ -89,11 +96,13 @@ const DEFAULT_STUDENTS = [
     parentPhone: "0555 400 6070",
     joinDate: "2025-10-15",
     pin: "1234",
+    accessCode: "IRF-104",
     notes: "Kısa sûreleri tamamlamak üzere."
   },
   {
     id: 105,
     studentNumber: "105",
+    username: "ali105",
     fullName: "Ali Osman Şahin",
     grade: "7. Sınıf",
     status: "Aktif",
@@ -101,11 +110,13 @@ const DEFAULT_STUDENTS = [
     parentPhone: "0505 500 7080",
     joinDate: "2025-11-01",
     pin: "1234",
+    accessCode: "IRF-105",
     notes: "Risale-i Nur ezberlerinde gayretli."
   },
   {
     id: 106,
     studentNumber: "106",
+    username: "hamza106",
     fullName: "Hamza Karaca",
     grade: "Hafızlık Grubu",
     status: "Aktif",
@@ -113,6 +124,7 @@ const DEFAULT_STUDENTS = [
     parentPhone: "0536 600 8090",
     joinDate: "2025-09-01",
     pin: "1234",
+    accessCode: "IRF-106",
     notes: "Günlük virdlerini intizamla takip ediyor."
   }
 ];
